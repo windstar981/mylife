@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hiệu Ứng Trái Tim 3D</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Arial', sans-serif;
+            touch-action: none;
+        }
+        
+        #scene {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            perspective: 1200px;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+        }
+        
+        .text-element {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+            white-space: nowrap;
+            text-shadow: 
+                0 0 5px rgba(255, 150, 255, 0.8),
+                0 0 10px rgba(255, 100, 255, 0.6),
+                0 0 15px rgba(255, 50, 255, 0.4);
+            opacity: 0.8;
+            transform-style: preserve-3d;
+            pointer-events: none;
+            filter: blur(0.5px);
+            font-weight: 300;
+        }
+        
+        /* Trái tim nhỏ di chuyển trong không gian */
+        .custom-heart {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            transform-style: preserve-3d;
+            pointer-events: none;
+        }
+        
+        .custom-heart::before,
+        .custom-heart::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            width: 52%;
+            height: 80%;
+            border-radius: 50% 50% 0 0;
+        }
+        
+        .custom-heart::before {
+            left: 0;
+            transform: rotate(-45deg);
+            transform-origin: 100% 100%;
+        }
+        
+        .custom-heart::after {
+            right: 0;
+            transform: rotate(45deg);
+            transform-origin: 0 100%;
+        }
+        
+        /* Các loại trái tim với màu sắc khác nhau */
+        .heart-pink-light::before, .heart-pink-light::after {
+            background: #ff9acd;
+            box-shadow: 
+                0 0 10px 2px rgba(255, 154, 205, 0.7),
+                0 0 20px 5px rgba(255, 154, 205, 0.4);
+        }
+        
+        .heart-pink-deep::before, .heart-pink-deep::after {
+            background: #ff5bb0;
+            box-shadow: 
+                0 0 10px 2px rgba(255, 91, 176, 0.7),
+                0 0 20px 5px rgba(255, 91, 176, 0.4);
+        }
+        
+        .heart-magenta::before, .heart-magenta::after {
+            background: #ff00ff;
+            box-shadow: 
+                0 0 10px 2px rgba(255, 0, 255, 0.7),
+                0 0 20px 5px rgba(255, 0, 255, 0.4);
+        }
+        
+        .heart-purple::before, .heart-purple::after {
+            background: #da70d6;
+            box-shadow: 
+                0 0 10px 2px rgba(218, 112, 214, 0.7),
+                0 0 20px 5px rgba(218, 112, 214, 0.4);
+        }
+        
+        /* Hiệu ứng lấp lánh cho trái tim */
+        .heart-sparkle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            opacity: 0;
+            transform: scale(0.2);
+            pointer-events: none;
+            animation: sparkle 4s infinite;
+        }
+        
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0.2); }
+            50% { opacity: 0.8; transform: scale(1); }
+        }
+        
+        /* Hiệu ứng overlay để tạo cảm giác sâu hơn */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.6) 100%);
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        /* Hiệu ứng trái tim lớn giữa màn hình */
+        #center-heart {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: 150px;
+            height: 150px;
+            z-index: -1;
+            filter: blur(5px);
+            pointer-events: none;
+        }
+        
+        #center-heart::before,
+        #center-heart::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            width: 52%;
+            height: 80%;
+            background: #ff00ff; /* Màu hồng đậm như trong hình */
+            border-radius: 50% 50% 0 0;
+            box-shadow: 
+                0 0 20px 10px rgba(255, 0, 255, 0.5),
+                0 0 40px 20px rgba(255, 0, 255, 0.3),
+                0 0 60px 30px rgba(255, 0, 255, 0.2),
+                0 0 80px 40px rgba(255, 0, 255, 0.1);
+            animation: pulse 4s infinite ease-in-out;
+            opacity: 0.8;
+        }
+        
+        #center-heart::before {
+            left: 0;
+            transform: rotate(-45deg);
+            transform-origin: 100% 100%;
+        }
+        
+        #center-heart::after {
+            right: 0;
+            transform: rotate(45deg);
+            transform-origin: 0 100%;
+        }
+        
+        /* Hiệu ứng đập nhịp cho trái tim */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        
+        /* Hiệu ứng hạt lấp lánh xung quanh */
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.7;
+            box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Media query cho thiết bị di động */
+        @media (max-width: 768px) {
+            .text-element {
+                font-size: 0.9rem;
+            }
+            
+            #center-heart {
+                width: 100px;
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="scene"></div>
+    <div id="center-heart"></div>
+    <div id="overlay"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const scene = document.getElementById('scene');
+            const centerHeart = document.getElementById('center-heart');
+            const isMobile = window.innerWidth <= 768;
+            
+            // Các câu nói ngọt ngào
+            const phrases = [
+                'Cảm ơn vì em đã đến',
+                'Anh sẽ luôn bên cạnh em',
+                'Yêu em nhiều Ánh Tuyết!!',
+                'Anh yêu em nhiều lắm',
+                'Cảm ơn vì em đã đến',
+                'Anh sẽ luôn bên em',
+                'Yêu em nhiều Ánh Tuyết!!',
+                'Anh yêu em',
+                'Cảm ơn vì em đã đến'
+            ];
+            
+            // Biến theo dõi chuyển động
+            let isPointerDown = false;
+            let lastPointerX = 0;
+            let lastPointerY = 0;
+            let rotationX = 0;
+            let rotationY = 0;
+            let momentumX = 0;
+            let momentumY = 0;
+            
+            // Danh sách các loại trái tim
+            const heartTypes = [
+                'heart-pink-light',
+                'heart-pink-deep',
+                'heart-magenta',
+                'heart-purple'
+            ];
+            
+            // Tạo các phần tử văn bản và trái tim
+            function createElements() {
+                // Xóa các phần tử cũ
+                scene.innerHTML = '';
+                
+                // Số lượng phần tử dựa trên thiết bị
+                const textCount = isMobile ? 40 : 60;
+                const heartCount = isMobile ? 30 : 50;  // Tăng số lượng trái tim
+                
+                // Tạo các phần tử chữ
+                for (let i = 0; i < textCount; i++) {
+                    const textElement = document.createElement('div');
+                    const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+                    textElement.textContent = phrase;
+                    textElement.className = 'text-element';
+                    
+                    // Vị trí ngẫu nhiên trong không gian 3D
+                    const x = Math.random() * 120 - 60;  // -60 đến 60
+                    const y = Math.random() * 120 - 60;  // -60 đến 60
+                    const z = Math.random() * -2000;     // -2000 đến 0
+                    
+                    // Kích thước dựa trên độ sâu
+                    const scale = Math.max(0.3, (2000 + z) / 2000);
+                    
+                    textElement.style.transform = `translate3d(${x}vw, ${y}vh, ${z}px) scale(${scale})`;
+                    scene.appendChild(textElement);
+                }
+                
+                // Tạo các trái tim
+                for (let i = 0; i < heartCount; i++) {
+                    const heart = document.createElement('div');
+                    heart.className = `custom-heart ${heartTypes[Math.floor(Math.random() * heartTypes.length)]}`;
+                    
+                    const x = Math.random() * 120 - 60;
+                    const y = Math.random() * 120 - 60;
+                    const z = Math.random() * -2000;
+                    
+                    const scale = Math.max(0.3, (2000 + z) / 2000);
+                    const rotation = Math.random() * 360;
+                    
+                    heart.style.transform = `translate3d(${x}vw, ${y}vh, ${z}px) scale(${scale}) rotate(${rotation}deg)`;
+                    
+                    // Thêm hiệu ứng lấp lánh cho một số trái tim
+                    if (Math.random() > 0.7) {
+                        const sparkle = document.createElement('div');
+                        sparkle.className = 'heart-sparkle';
+                        sparkle.style.animationDelay = `${Math.random() * 4}s`;
+                        heart.appendChild(sparkle);
+                    }
+                    
+                    scene.appendChild(heart);
+                }
+                
+                // Tạo các hạt lấp lánh
+                createParticles(100);
+            }
+            
+            // Tạo các hạt lấp lánh
+            function createParticles(count) {
+                for (let i = 0; i < count; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    
+                    // Vị trí ngẫu nhiên
+                    const x = Math.random() * 100;
+                    const y = Math.random() * 100;
+                    const z = Math.random() * -1000;
+                    
+                    // Màu sắc ngẫu nhiên - chủ yếu là hồng và trắng
+                    const colors = [
+                        'rgba(255, 255, 255, 0.8)',
+                        'rgba(255, 200, 230, 0.8)',
+                        'rgba(255, 150, 200, 0.8)',
+                        'rgba(255, 0, 255, 0.8)'
+                    ];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    particle.style.background = color;
+                    particle.style.transform = `translate3d(${x}vw, ${y}vh, ${z}px)`;
+                    particle.style.width = `${1 + Math.random() * 3}px`;
+                    particle.style.height = particle.style.width;
+                    
+                    // Lưu trữ thông tin chuyển động
+                    particle.dataset.vx = Math.random() * 0.2 - 0.1;
+                    particle.dataset.vy = Math.random() * 0.2 - 0.1;
+                    particle.dataset.vz = Math.random() * 0.5 + 0.5;
+                    
+                    scene.appendChild(particle);
+                }
+            }
+            
+            // Animation loop
+            function animate() {
+                // Di chuyển các phần tử văn bản và trái tim
+                const elements = document.querySelectorAll('.text-element, .custom-heart');
+                
+                elements.forEach(element => {
+                    const transform = element.style.transform;
+                    const matches = transform.match(/translate3d\((.*?)vw, (.*?)vh, (.*?)px/);
+                    
+                    if (matches) {
+                        let x = parseFloat(matches[1]);
+                        let y = parseFloat(matches[2]);
+                        let z = parseFloat(matches[3]);
+                        
+                        // Di chuyển chậm về phía trước
+                        z += 2;
+                        
+                        // Nếu đối tượng đã ra khỏi tầm nhìn, đặt lại vị trí
+                        if (z > 200) {
+                            x = Math.random() * 120 - 60;
+                            y = Math.random() * 120 - 60;
+                            z = -2000;
+                            
+                            // Nếu là phần tử văn bản, cập nhật nội dung
+                            if (element.classList.contains('text-element')) {
+                                element.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+                            }
+                            
+                            // Nếu là trái tim, cập nhật loại và góc xoay
+                            if (element.classList.contains('custom-heart')) {
+                                // Cập nhật loại trái tim
+                                element.className = `custom-heart ${heartTypes[Math.floor(Math.random() * heartTypes.length)]}`;
+                                
+                                // Cập nhật góc xoay
+                                const rotation = Math.random() * 360;
+                                element.style.transform = `translate3d(${x}vw, ${y}vh, ${z}px) scale(${Math.max(0.3, (2000 + z) / 2000)}) rotate(${rotation}deg)`;
+                                
+                                // Thêm hoặc xóa hiệu ứng lấp lánh
+                                element.innerHTML = '';
+                                if (Math.random() > 0.7) {
+                                    const sparkle = document.createElement('div');
+                                    sparkle.className = 'heart-sparkle';
+                                    sparkle.style.animationDelay = `${Math.random() * 4}s`;
+                                    element.appendChild(sparkle);
+                                }
+                                
+                                return;
+                            }
+                        }
+                        
+                        // Kích thước dựa trên độ sâu
+                        const scale = Math.max(0.3, (2000 + z) / 2000);
+                        
+                        // Lấy rotation nếu có
+                        let rotation = '';
+                        const rotMatch = transform.match(/rotate\((.*?)deg\)/);
+                        if (rotMatch && element.classList.contains('custom-heart')) {
+                            const rot = parseFloat(rotMatch[1]);
+                            rotation = ` rotate(${rot + 0.2}deg)`;
+                        }
+                        
+                        // Cập nhật vị trí
+                        element.style.transform = `translate3d(${x}vw, ${y}vh, ${z}px) scale(${scale})${rotation}`;
+                        
+                        // Điều chỉnh độ mờ dựa trên độ sâu
+                        const opacity = Math.min(0.9, Math.max(0.2, (2000 + z) / 2000));
+                        element.style.opacity = opacity;
+                    }
+                });
+                
+                // Di chuyển các hạt lấp lánh
+                const particles = document.querySelectorAll('.particle');
+                particles.forEach(particle => {
+                    const transform = particle.style.transform;
+                    const matches = transform.match(/translate3d\((.*?)vw, (.*?)vh, (.*?)px/);
+                    
+                    if (matches) {
+                        let x = parseFloat(matches[1]);
+                        let y = parseFloat(matches[2]);
+                        let z = parseFloat(matches[3]);
+                        
+                        const vx = parseFloat(particle.dataset.vx);
+                        const vy = parseFloat(particle.dataset.vy);
+                        const vz = parseFloat(particle.dataset.vz);
+                        
+                        x += vx;
+                        y += vy;
+                        z += vz;
+                        
+                        // Nếu hạt ra khỏi tầm nhìn, đặt lại vị trí
+                        if (z > 200 || x < 0 || x > 100 || y < 0 || y > 100) {
+                            x = Math.random() * 100;
+                            y = Math.random() * 100;
+                            z = -1000;
+                            
+                            // Cập nhật vận tốc
+                            particle.dataset.vx = Math.random() * 0.2 - 0.1;
+                            particle.dataset.vy = Math.random() * 0.2 - 0.1;
+                            particle.dataset.vz = Math.random() * 0.5 + 0.5;
+                        }
+                        
+                        // Cập nhật vị trí
+                        particle.style.transform = `translate3d(${x}vw, ${y}vh, ${z}px)`;
+                        
+                        // Điều chỉnh độ mờ dựa trên độ sâu
+                        const opacity = Math.min(0.9, Math.max(0.2, (1000 + z) / 1000));
+                        particle.style.opacity = opacity;
+                    }
+                });
+                
+                // Áp dụng momentum cho hiệu ứng quán tính
+                if (!isPointerDown) {
+                    // Giảm dần momentum
+                    momentumX *= 0.95;
+                    momentumY *= 0.95;
+                    
+                    if (Math.abs(momentumX) > 0.01 || Math.abs(momentumY) > 0.01) {
+                        rotationY += momentumX;
+                        rotationX += momentumY;
+                        
+                        // Giới hạn góc xoay
+                        rotationX = Math.max(-30, Math.min(30, rotationX));
+                        rotationY = Math.max(-30, Math.min(30, rotationY));
+                        
+                        scene.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+                    }
+                }
+                
+                // Hiệu ứng đập nhịp cho trái tim trung tâm
+                const pulseScale = 1 + 0.05 * Math.sin(Date.now() / 500);
+                centerHeart.style.transform = `translate(-50%, -50%) scale(${pulseScale})`;
+                
+                requestAnimationFrame(animate);
+            }
+            
+            // Xử lý sự kiện chuột/cảm ứng
+            function handlePointerDown(e) {
+                isPointerDown = true;
+                lastPointerX = e.clientX || e.touches[0].clientX;
+                lastPointerY = e.clientY || e.touches[0].clientY;
+                
+                // Dừng momentum khi người dùng bắt đầu tương tác
+                momentumX = 0;
+                momentumY = 0;
+            }
+            
+            function handlePointerMove(e) {
+                if (!isPointerDown) return;
+                
+                const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : lastPointerX);
+                const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : lastPointerY);
+                
+                // Tính toán sự thay đổi
+                const deltaX = clientX - lastPointerX;
+                const deltaY = clientY - lastPointerY;
+                
+                // Cập nhật góc xoay (đảo ngược hướng cho cảm giác tự nhiên)
+                rotationY += deltaX * 0.2;
+                rotationX -= deltaY * 0.2;
+                
+                // Giới hạn góc xoay
+                rotationX = Math.max(-30, Math.min(30, rotationX));
+                rotationY = Math.max(-30, Math.min(30, rotationY));
+                
+                // Cập nhật momentum
+                momentumX = deltaX * 0.2;
+                momentumY = -deltaY * 0.2;
+                
+                // Áp dụng biến đổi
+                scene.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+                
+                // Cập nhật vị trí con trỏ cuối cùng
+                lastPointerX = clientX;
+                lastPointerY = clientY;
+                
+                // Ngăn chặn hành vi mặc định như cuộn trang
+                e.preventDefault();
+            }
+            
+            function handlePointerUp() {
+                isPointerDown = false;
+                // Momentum sẽ tiếp tục trong hàm animate
+            }
+            
+            // Thêm hiệu ứng khi nhấn vào màn hình
+            function handleTap(e) {
+                // Tạo hiệu ứng trái tim bùng nổ tại vị trí nhấn
+                const x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : window.innerWidth / 2);
+                const y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : window.innerHeight / 2);
+                
+                createHeartBurst(x, y);
+            }
+            
+            // Tạo hiệu ứng bùng nổ trái tim
+            function createHeartBurst(x, y) {
+                const burstCount = 10;
+                
+                for (let i = 0; i < burstCount; i++) {
+                    const heart = document.createElement('div');
+                    heart.className = `custom-heart ${heartTypes[Math.floor(Math.random() * heartTypes.length)]}`;
+                    
+                    // Vị trí ban đầu tại điểm nhấn
+                    heart.style.position = 'fixed';
+                    heart.style.left = `${x}px`;
+                    heart.style.top = `${y}px`;
+                    heart.style.transform = 'translate(-50%, -50%) scale(0.2)';
+                    
+                    // Thêm vào body
+                    document.body.appendChild(heart);
+                    
+                    // Tạo hiệu ứng animation
+                    const angle = (i / burstCount) * Math.PI * 2;
+                    const distance = 50 + Math.random() * 100;
+                    const duration = 1 + Math.random();
+                    
+                    const targetX = x + Math.cos(angle) * distance;
+                    const targetY = y + Math.sin(angle) * distance;
+                    
+                    // Tạo animation
+                    heart.animate([
+                        { transform: 'translate(-50%, -50%) scale(0.2)', opacity: 1 },
+                        { transform: `translate(${targetX - x}px, ${targetY - y}px) scale(0.8)`, opacity: 0.8, offset: 0.5 },
+                        { transform: `translate(${targetX - x}px, ${targetY - y}px) scale(0.2)`, opacity: 0 }
+                    ], {
+                        duration: duration * 1000,
+                        easing: 'ease-out',
+                        fill: 'forwards'
+                    });
+                    
+                    // Xóa phần tử sau khi animation kết thúc
+                    setTimeout(() => {
+                        if (heart.parentNode) {
+                            heart.remove();
+                        }
+                    }, duration * 1000);
+                }
+            }
+            
+            // Thêm các trình xử lý sự kiện cho cả chuột và cảm ứng
+            document.addEventListener('mousedown', handlePointerDown);
+            document.addEventListener('mousemove', handlePointerMove);
+            document.addEventListener('mouseup', handlePointerUp);
+            document.addEventListener('mouseleave', handlePointerUp);
+            
+            document.addEventListener('touchstart', handlePointerDown, {passive: false});
+            document.addEventListener('touchmove', handlePointerMove, {passive: false});
+            document.addEventListener('touchend', handlePointerUp);
+            document.addEventListener('touchcancel', handlePointerUp);
+            
+            // Thêm sự kiện nhấn
+            document.addEventListener('click', handleTap);
+            document.addEventListener('touchstart', handleTap, {passive: true});
+            
+            // Khởi tạo và bắt đầu animation
+            createElements();
+            animate();
+            
+            // Tạo lại các phần tử khi thay đổi kích thước cửa sổ
+            window.addEventListener('resize', function() {
+                // Cập nhật biến isMobile
+                const newIsMobile = window.innerWidth <= 768;
+                if (newIsMobile !== isMobile) {
+                    isMobile = newIsMobile;
+                    createElements();
+                }
+            });
+            
+            // Thêm hiệu ứng tương tác khi lắc thiết bị (nếu có cảm biến)
+            if (window.DeviceMotionEvent) {
+                window.addEventListener('devicemotion', function(e) {
+                    if (!isPointerDown && e.accelerationIncludingGravity) {
+                        const x = e.accelerationIncludingGravity.x || 0;
+                        const y = e.accelerationIncludingGravity.y || 0;
+                        
+                        // Chỉ phản ứng với chuyển động đủ lớn
+                        if (Math.abs(x) > 1.5 || Math.abs(y) > 1.5) {
+                            rotationY += x * 0.5;
+                            rotationX -= y * 0.5;
+                            
+                            // Giới hạn góc xoay
+                            rotationX = Math.max(-30, Math.min(30, rotationX));
+                            rotationY = Math.max(-30, Math.min(30, rotationY));
+                            
+                            scene.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+                            
+                                                        // Thêm hiệu ứng bùng nổ trái tim khi lắc mạnh
+                            if (Math.abs(x) > 8 || Math.abs(y) > 8) {
+                                createHeartBurst(window.innerWidth / 2, window.innerHeight / 2);
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Thêm hiệu ứng đặc biệt cho trái tim trung tâm
+            function enhanceCenterHeart() {
+                // Tạo hiệu ứng phát sáng xung quanh trái tim trung tâm
+                const glowEffect = document.createElement('div');
+                glowEffect.style.position = 'fixed';
+                glowEffect.style.top = '50%';
+                glowEffect.style.left = '50%';
+                glowEffect.style.width = '200px';
+                glowEffect.style.height = '200px';
+                glowEffect.style.borderRadius = '50%';
+                glowEffect.style.background = 'radial-gradient(circle, rgba(255,0,255,0.3) 0%, rgba(255,0,255,0) 70%)';
+                glowEffect.style.transform = 'translate(-50%, -50%)';
+                glowEffect.style.zIndex = '-2';
+                glowEffect.style.filter = 'blur(20px)';
+                glowEffect.style.animation = 'glow 5s infinite alternate ease-in-out';
+                document.body.appendChild(glowEffect);
+                
+                // Thêm keyframes cho hiệu ứng phát sáng
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes glow {
+                        0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+                        100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.2; }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                // Tạo các tia sáng phát ra từ trái tim
+                for (let i = 0; i < 12; i++) {
+                    const ray = document.createElement('div');
+                    const angle = (i / 12) * Math.PI * 2;
+                    const length = 80 + Math.random() * 40;
+                    
+                    ray.style.position = 'fixed';
+                    ray.style.top = '50%';
+                    ray.style.left = '50%';
+                    ray.style.width = `${length}px`;
+                    ray.style.height = '1px';
+                    ray.style.background = 'linear-gradient(to right, rgba(255,0,255,0.8), rgba(255,0,255,0))';
+                    ray.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
+                    ray.style.transformOrigin = 'left center';
+                    ray.style.zIndex = '-3';
+                    ray.style.opacity = '0.6';
+                    ray.style.filter = 'blur(1px)';
+                    ray.style.animation = `pulse-ray ${2 + Math.random()}s infinite alternate ease-in-out`;
+                    
+                    document.body.appendChild(ray);
+                }
+                
+                // Thêm keyframes cho hiệu ứng tia sáng
+                const rayStyle = document.createElement('style');
+                rayStyle.textContent = `
+                    @keyframes pulse-ray {
+                        0% { transform: translate(-50%, -50%) rotate(VAR_ANGLErad) scaleX(0.8); opacity: 0.4; }
+                        100% { transform: translate(-50%, -50%) rotate(VAR_ANGLErad) scaleX(1.2); opacity: 0.6; }
+                    }
+                `;
+                document.head.appendChild(rayStyle);
+                
+                // Thêm hiệu ứng hào quang
+                const aura = document.createElement('div');
+                aura.style.position = 'fixed';
+                aura.style.top = '50%';
+                aura.style.left = '50%';
+                aura.style.width = '180px';
+                aura.style.height = '180px';
+                aura.style.borderRadius = '50%';
+                aura.style.boxShadow = '0 0 30px 15px rgba(255,0,255,0.3)';
+                aura.style.transform = 'translate(-50%, -50%)';
+                aura.style.zIndex = '-2';
+                aura.style.opacity = '0.6';
+                aura.style.animation = 'aura-pulse 4s infinite alternate ease-in-out';
+                document.body.appendChild(aura);
+                
+                // Thêm keyframes cho hiệu ứng hào quang
+                const auraStyle = document.createElement('style');
+                auraStyle.textContent = `
+                    @keyframes aura-pulse {
+                        0% { box-shadow: 0 0 30px 15px rgba(255,0,255,0.3); }
+                        100% { box-shadow: 0 0 50px 25px rgba(255,0,255,0.2); }
+                    }
+                `;
+                document.head.appendChild(auraStyle);
+            }
+            
+            // Thêm hiệu ứng đặc biệt cho trái tim trung tâm
+            enhanceCenterHeart();
+            
+            // Thêm hiệu ứng văn bản ẩn xuất hiện
+            function addHiddenMessage() {
+                const messages = [
+                    'Anh yêu em',
+                    'Mãi mãi bên nhau',
+                    'Trái tim anh thuộc về em',
+		'🥰Yêu Em🥰',
+			'Ánh💖Tuyết'
+                ];
+                
+                // Tạo phần tử văn bản ẩn
+                const hiddenMessage = document.createElement('div');
+                hiddenMessage.style.position = 'fixed';
+                hiddenMessage.style.top = '70%';
+                hiddenMessage.style.left = '50%';
+                hiddenMessage.style.transform = 'translate(-50%, -50%)';
+                hiddenMessage.style.color = 'rgba(255,255,255,0)';
+                hiddenMessage.style.fontSize = '2rem';
+                hiddenMessage.style.fontWeight = 'bold';
+                hiddenMessage.style.textShadow = '0 0 10px rgba(255,150,255,0), 0 0 20px rgba(255,100,255,0)';
+                hiddenMessage.style.opacity = '0';
+                hiddenMessage.style.transition = 'all 2s ease-in-out';
+                hiddenMessage.style.pointerEvents = 'none';
+                hiddenMessage.style.zIndex = '100';
+                hiddenMessage.textContent = messages[0];
+                document.body.appendChild(hiddenMessage);
+                
+                // Hiệu ứng xuất hiện và biến mất
+                let currentIndex = 0;
+                setInterval(() => {
+                    hiddenMessage.style.opacity = '0';
+                    hiddenMessage.style.color = 'rgba(255,255,255,0)';
+                    hiddenMessage.style.textShadow = '0 0 10px rgba(255,150,255,0), 0 0 20px rgba(255,100,255,0)';
+                    
+                    setTimeout(() => {
+                        currentIndex = (currentIndex + 1) % messages.length;
+                        hiddenMessage.textContent = messages[currentIndex];
+                        
+                        hiddenMessage.style.opacity = '1';
+                        hiddenMessage.style.color = 'rgba(255,255,255,0.9)';
+                        hiddenMessage.style.textShadow = '0 0 10px rgba(255,150,255,0.8), 0 0 20px rgba(255,100,255,0.6)';
+                    }, 2000);
+                }, 6000);
+                
+                // Hiển thị lần đầu tiên sau 3 giây
+                setTimeout(() => {
+                    hiddenMessage.style.opacity = '1';
+                    hiddenMessage.style.color = 'rgba(255,255,255,0.9)';
+                    hiddenMessage.style.textShadow = '0 0 10px rgba(255,150,255,0.8), 0 0 20px rgba(255,100,255,0.6)';
+                }, 3000);
+            }
+            
+            // Thêm thông điệp ẩn
+            addHiddenMessage();
+            
+            // Thêm hiệu ứng nhấp nháy ngẫu nhiên cho trái tim
+            function addRandomSparkles() {
+                setInterval(() => {
+                    const hearts = document.querySelectorAll('.custom-heart');
+                    const randomIndex = Math.floor(Math.random() * hearts.length);
+                    const randomHeart = hearts[randomIndex];
+                    
+                    if (randomHeart) {
+                        const sparkle = document.createElement('div');
+                        sparkle.className = 'heart-sparkle';
+                        randomHeart.appendChild(sparkle);
+                        
+                        setTimeout(() => {
+                            if (sparkle.parentNode) {
+                                sparkle.remove();
+                            }
+                        }, 4000);
+                    }
+                }, 500);
+            }
+            
+            // Thêm hiệu ứng nhấp nháy ngẫu nhiên
+            addRandomSparkles();
+        });
+    </script>
+</body>
+</html>
